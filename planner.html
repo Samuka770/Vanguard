@@ -8,6 +8,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/css/styles.css" />
+  <!-- Optional: configure API base if calling a remote server. Example: https://seu-dominio.com -->
+  <meta name="api-base" content="">
+  <!-- Optional: full endpoint override (takes precedence over api-base) -->
+  <meta name="api-endpoint" content="https://greenoryon/api/pings.php">
   <style>
     .planner-header { padding: 32px 0 0; }
     .roles-legend { display: flex; gap: 10px; flex-wrap: wrap; color: var(--muted); }
@@ -105,10 +109,7 @@
       <p class="copyright">© 2025 Safer770. The Best.</p>
     </div>
   </footer>
-  <!-- Optional: Supabase client for DB logging (fill meta values) -->
-  <meta name="supabase-url" content="">
-  <meta name="supabase-anon-key" content="">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <script src="/assets/js/planner.js"></script>
 </body>
 </html>

@@ -63,6 +63,9 @@
   const $roleImage = document.getElementById('roleImage');
   const $roleImageLabel = document.getElementById('roleImageLabel');
   const state = loadState() || { role: '', name: '' };
+  const API_BASE = (document.querySelector('meta[name="api-base"]')?.content || '').trim().replace(/\/$/, '');
+  const API_ENDPOINT_OVERRIDE = (document.querySelector('meta[name="api-endpoint"]')?.content || '').trim();
+  const API_QUERY_OVERRIDE = new URLSearchParams(location.search).get('api')?.trim() || '';
 
   function loadState() {
     try {
@@ -99,7 +102,7 @@
     $pingOne.addEventListener('click', () => {
       const roleKey = state.role;
       const roleLabel = ROLES.find(r => r.key === roleKey)?.label || '—';
-      const name = (state.name?.trim() || 'Sem nome');
+      const name = (state.name?.trim() || '');
       const text = `@here ${name} confirmado em ${roleLabel}.`;
 
       // Copy ping text
@@ -109,7 +112,11 @@
       }).catch(() => { alert(text); });
 
       // Log to backend (non-blocking)
-      logPing({ name, role_key: roleKey, role_label: roleLabel });
+      if (roleKey && name) {
+        logPing({ name, role_key: roleKey, role_label: roleLabel });
+      } else {
+        console.warn('Ping not logged: missing name or role.');
+      }
     });
 
     // Removed clear button per request
@@ -131,7 +138,23 @@
   
   function logPing(payload) {
     try {
-      fetch('/assets/db/pings.php', {
+      let endpoint = '';
+      if (API_QUERY_OVERRIDE) {
+        endpoint = API_QUERY_OVERRIDE;
+      } else if (API_ENDPOINT_OVERRIDE) {
+        endpoint = API_ENDPOINT_OVERRIDE;
+      } else if (API_BASE) {
+        endpoint = API_BASE + '/assets/db/pings.php';
+      } else {
+        endpoint = '/assets/db/pings.php';
+      }
+
+      if (location.host.includes('127.0.0.1:5500') || location.host.includes('localhost:5500')) {
+        console.warn('Live Server não executa PHP. Use php -S 127.0.0.1:8000 -t . e abra http://127.0.0.1:8000/planner.html, ou defina meta[name="api-base"] para um servidor com PHP.');
+      }
+
+      console.info('VGK ping endpoint:', endpoint);
+      fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

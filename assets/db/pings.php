@@ -21,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
   exit;
 }
 
-require_once __DIR__ . '/db_config.php'; // provides $pdo
+require_once __DIR__ . '/db_config.php'; // provides $pdo and creates tables (including pings)
 
 // Read body as JSON first; fallback to form-encoded
 $rawBody = file_get_contents('php://input');
@@ -40,20 +40,7 @@ if ($name === '' || $roleKey === '') {
   exit;
 }
 
-// Provision table if needed
-$pdo->exec(<<<SQL
-CREATE TABLE IF NOT EXISTS pings (
-  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(150) NOT NULL,
-  role_key VARCHAR(64) NOT NULL,
-  role_label VARCHAR(150) DEFAULT NULL,
-  ip VARCHAR(45) DEFAULT NULL,
-  user_agent VARCHAR(255) DEFAULT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  KEY idx_role_key (role_key),
-  KEY idx_created_at (created_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-SQL);
+// Table is created in db_config.php; no need to duplicate here
 
 $ip = $_SERVER['REMOTE_ADDR'] ?? null;
 $ua = $_SERVER['HTTP_USER_AGENT'] ?? null;
