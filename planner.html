@@ -8,6 +8,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/css/styles.css" />
+  <!-- Favicon fallbacks -->
+  <link rel="icon" href="/assets/favorite.ico" type="image/x-icon" />
+  <link rel="shortcut icon" href="/assets/favorite.ico" type="image/x-icon" />
+  <link rel="icon" href="/assets/favorite.png" type="image/png" sizes="32x32" />
+  <link rel="icon" href="/favicon.ico" type="image/x-icon" />
   <!-- Optional: configure API base if calling a remote server. Example: https://seu-dominio.com -->
   <meta name="api-base" content="">
   <!-- Optional: full endpoint override (takes precedence over api-base) -->
@@ -38,6 +43,10 @@
     .role-card-image-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .role-card-meta { color: var(--muted); font-size: 0.95rem; }
     @media (max-width: 768px) { .planner-grid { grid-template-columns: 1fr; } }
+
+    /* Builds background spanning both columns */
+    .builds-bg { grid-column: 1 / -1; border: 1px solid var(--border); border-radius: 16px; overflow: hidden; background: rgba(255,255,255,0.04); }
+    .builds-bg img { width: 100%; height: auto; display: block; }
   </style>
 </head>
 <body>
@@ -46,7 +55,8 @@
       <a class="brand" href="/index.html#home">Vanguard Killers</a>
       <nav class="nav">
         <a href="/index.html#home" class="nav-link">Início</a>
-        <a href="/planner.html" class="nav-link btn btn-primary">ZVZ Planner</a>
+        <a href="/planner.html" class="nav-link btn btn-primary">Pingar ZVZ</a>
+        <a href="/pings.html" class="nav-link">Caller's</a>
       </nav>
       <button class="hamburger" aria-label="Abrir menu">
         <span></span><span></span><span></span>
@@ -93,6 +103,10 @@
             <span id="roleImageLabel" class="role-card-label">Selecione uma role</span>
           </div>
         </div>
+        <!-- Background builds image spanning both columns -->
+        <div class="builds-bg">
+          <img id="buildsBackground" src="/assets/img/builds_bg.jpg" alt="Background das builds" />
+        </div>
         </div>
       </div>
     </section>
@@ -110,6 +124,8 @@
     </div>
   </footer>
 
+  <script src="/assets/js/nav.js"></script>
+  <script src="/assets/js/lightbox.js"></script>
   <script src="/assets/js/planner.js"></script>
 </body>
 </html>

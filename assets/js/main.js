@@ -63,12 +63,5 @@
   }
   step();
 
-  // Mobile nav toggle
-  const burger = document.querySelector('.hamburger');
-  const nav = document.querySelector('.nav');
-  if (burger && nav) {
-    burger.addEventListener('click', () => {
-      nav.style.display = nav.style.display === 'flex' ? 'none' : 'flex';
-    });
-  }
+  // Nav behavior handled in assets/js/nav.js
 })();

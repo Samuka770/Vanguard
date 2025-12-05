@@ -1,0 +1,230 @@
+(function(){
+  const API_LIST_ENDPOINT = (document.querySelector('meta[name="api-list-endpoint"]')?.content || '').trim();
+  const API_LIST_QUERY = new URLSearchParams(location.search).get('apiList')?.trim() || '';
+  const endpoint = API_LIST_QUERY || API_LIST_ENDPOINT || '/assets/db/pings_list.php';
+
+  const $list = document.getElementById('pingsList');
+  const $refresh = document.getElementById('refresh');
+  const $status = document.getElementById('status');
+  const $deleteAll = document.getElementById('deleteAll');
+
+  // --- Simple base64-gated auth (client-side only; obfuscation, not true security) ---
+  const AUTH_KEY = 'vgk_pings_auth_session_v1';
+  const ALLOWED_TOKENS = [
+    'YWRtaW46dmdrMjAyNQ==' 
+  ];
+
+  const $overlay = document.getElementById('authOverlay');
+  const $u = document.getElementById('authUser');
+  const $p = document.getElementById('authPass');
+  const $go = document.getElementById('authSubmit');
+  const $err = document.getElementById('authError');
+  const $close = document.getElementById('authClose');
+
+  function toBase64Utf8(s){
+    // handle UTF-8
+    return btoa(unescape(encodeURIComponent(String(s))));
+  }
+
+  function isTokenAllowed(tok){ return ALLOWED_TOKENS.includes(tok); }
+
+  // Use sessionStorage so the token is cleared when the tab/page closes
+  function getStoredToken(){ return sessionStorage.getItem(AUTH_KEY) || ''; }
+  function storeToken(tok){ try { sessionStorage.setItem(AUTH_KEY, tok); } catch {} }
+
+  function showOverlay(){ $overlay.style.display = 'grid'; $u?.focus(); }
+  function hideOverlay(){ $overlay.style.display = 'none'; }
+
+  async function ensureAuth(){
+    const existing = getStoredToken();
+    if (existing && isTokenAllowed(existing)) { hideOverlay(); return existing; }
+
+    showOverlay();
+    // Close handler: send to home
+    $close?.addEventListener('click', () => { window.location.href = '/index.html#home'; });
+    return new Promise(resolve => {
+      const submit = () => {
+        const tok = toBase64Utf8(`${$u.value}:${$p.value}`);
+        if (isTokenAllowed(tok)) { storeToken(tok); hideOverlay(); resolve(tok); }
+        else { $err.textContent = 'Credenciais inválidas.'; }
+      };
+      $go?.addEventListener('click', submit);
+      [$u,$p].forEach(el => el?.addEventListener('keydown', (e)=>{ if(e.key==='Enter') submit(); }));
+    });
+  }
+
+  // Force re-login on page unload/revisit: clear any session token when leaving
+  window.addEventListener('beforeunload', () => {
+    try { sessionStorage.removeItem(AUTH_KEY); } catch {}
+  });
+
+  function fmtDate(ts){
+    try { const d = new Date(ts.replace(' ', 'T')); return d.toLocaleString(); } catch { return ts; }
+  }
+
+  function render(items){
+    if(!Array.isArray(items) || items.length === 0){
+      $list.innerHTML = '<div class="hint">Sem pings ainda.</div>';
+      return;
+    }
+
+    // Group by topics: Tanks/Sups, DPS, Healers, BM (Albion-specific mapping)
+    const normalize = s => String(s || '').toLowerCase();
+    const groups = {
+      tanks: [],
+      dps: [],
+      heal: [],
+      bm: []
+    };
+    // Known weapon/role name mappings (Portuguese/Albion terms)
+    // Healers per provided list: Queda Santa, Rampante, Exaltado
+    const isHealerName = (t) => /\b(queda santa|rampante|exaltado|holy|nature|revitalize|rejuvenation|grande santo|grande natureza)\b/.test(t);
+    const isSupportName = (t) => /\b(para tempo|arcano|time freeze|arcane|enfeebling|motivating)\b/.test(t);
+    const isTankName = (t) => /\b(martelo de batalha|martelo|maça pesada|maca pesada|mace|hammer|grovekeeper|campeao da natureza|guardian|silence|oculto|jurador|petrea|pétrea)\b/.test(t);
+    const isBMName = (t) => /\b(bm|battle ?mount|carroça|carroca)\b/.test(t);
+    items.forEach(it => {
+      const key = normalize(it.role_key);
+      const label = normalize(it.role_label);
+      const name = normalize(it.name);
+      const text = `${key} ${label} ${name}`.trim();
+      let bucket = 'dps';
+      // Prefer explicit role_key when provided
+      if (/\b(tank|tanks|sup|support)\b/.test(key)) bucket = 'tanks';
+      else if (/\b(heal|healer)\b/.test(key)) bucket = 'heal';
+      else if (/\b(bm|battle ?mount)\b/.test(key)) bucket = 'bm';
+      else {
+        // Fallback by weapon/build name mapping
+        if (isBMName(text)) bucket = 'bm';
+        else if (isTankName(text)) bucket = 'tanks';
+        else if (isSupportName(text)) bucket = 'tanks'; // Sups grouped with Tanks
+        else if (isHealerName(text)) bucket = 'heal';
+        else bucket = 'dps';
+      }
+      groups[bucket].push(it);
+    });
+
+    const section = (title, arr) => {
+      if (!arr.length) return '';
+      const cards = arr.map(it => `
+        <div class="ping-card" data-id="${it.id}">
+          <div>
+            <div class="ping-name">${escapeHtml(it.name || 'Sem nome')}</div>
+            <div class="ping-role">${escapeHtml(it.role_label || it.role_key || '-')}</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <div class="ping-time">${fmtDate(it.created_at)}</div>
+            <button class="ping-del" title="Remover">✕</button>
+          </div>
+        </div>`).join('');
+      return `
+        <h3 style="margin:12px 0 8px;">${title}</h3>
+        <div class="pings-grid">${cards}</div>
+      `;
+    };
+
+    $list.innerHTML = [
+      section('Tanks/Sups', groups.tanks),
+      section('DPS', groups.dps),
+      section('Healers', groups.heal),
+      section('BM', groups.bm)
+    ].join('');
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
+  }
+
+  async function load(authTok){
+    $status.textContent = 'Carregando...';
+    try {
+      const res = await fetch(endpoint + '?limit=100', { method: 'GET', headers: authTok ? { 'Authorization': 'Basic ' + authTok } : undefined });
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      const json = await res.json();
+      if(json.status !== 'ok') throw new Error('API error');
+      render(json.data);
+      $status.textContent = `Atualizado em ${new Date().toLocaleTimeString()}`;
+    } catch(e){
+      console.warn('Load pings failed', e);
+      $status.textContent = 'Falha ao carregar pings';
+    }
+  }
+
+  async function deleteAll(authTok){
+    try {
+      const url = `${endpoint}?action=truncate`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', ...(authTok ? { 'Authorization': 'Basic ' + authTok } : {}) },
+        body: new URLSearchParams({ action: 'truncate' }).toString()
+      });
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      const json = await res.json();
+      if(json.status !== 'ok') throw new Error('API error');
+      $list.innerHTML = '<div class="hint">Sem pings ainda.</div>';
+      $status.textContent = 'Lista apagada';
+    } catch(e){
+      console.warn('Truncate failed', e);
+      alert('Falha ao apagar lista.');
+    }
+  }
+
+  async function deletePing(id, authTok){
+    // Tenta deletar por ID; se inválido, faz fallback por nome
+    const numericId = Number(id);
+    const card = $list.querySelector(`[data-id="${id}"]`);
+    const nameText = card?.querySelector('.ping-name')?.textContent?.trim();
+
+    // helper para requisição POST
+    async function postDelete(payload, query){
+      const url = query ? `${endpoint}?${new URLSearchParams(query).toString()}` : endpoint;
+      const formBody = new URLSearchParams(payload).toString();
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', ...(authTok ? { 'Authorization': 'Basic ' + authTok } : {}) },
+        body: formBody
+      });
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      const json = await res.json();
+      if(json.status !== 'ok') throw new Error('API error');
+      return json;
+    }
+
+    try {
+      if (Number.isFinite(numericId) && numericId > 0) {
+        // Send both JSON body and querystring to maximize compatibility
+        await postDelete({ action: 'delete', id: numericId }, { action: 'delete', id: String(numericId) });
+      } else if (nameText) {
+        // Fallback: tenta excluir pelo nome
+        await postDelete({ action: 'delete_by_name', name: nameText }, { action: 'delete_by_name', name: nameText });
+      } else {
+        throw new Error('Invalid id and missing name');
+      }
+
+      if (card) card.remove();
+    } catch(e){
+      console.warn('Delete ping failed', e);
+      const msg = e?.message === 'HTTP 400' ? 'Falha ao remover (400). Verifique se o backend aceita o formato.' : 'Falha ao remover.';
+      alert(msg);
+    }
+  }
+
+  (async () => {
+    const tok = await ensureAuth();
+    $refresh?.addEventListener('click', () => load(tok));
+    $deleteAll?.addEventListener('click', () => {
+      if (confirm('Deletar todos os pings? Esta ação não pode ser desfeita.')) deleteAll(tok);
+    });
+    load(tok);
+    setInterval(() => load(tok), 30000);
+
+    // Delegate delete click
+    $list.addEventListener('click', (e) => {
+      const btn = e.target.closest('.ping-del');
+      if (!btn) return;
+      const card = btn.closest('[data-id]');
+      const id = card?.getAttribute('data-id');
+      if (!id) return;
+      if (confirm('Remover este ping?')) deletePing(id, tok);
+    });
+  })();
+})();

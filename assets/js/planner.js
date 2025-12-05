@@ -5,8 +5,7 @@
     { key: 'maca_pesada', label: 'Maça Pesada' },
     { key: 'para_tempo', label: 'Para Tempo' },
     { key: 'silence', label: 'Silence' },
-    { key: 'petrea1', label: 'Pétrea' },
-    { key: 'petrea2', label: 'Pétrea' },
+    { key: 'petrea', label: 'Pétrea' },
     { key: 'oculto', label: 'Oculto' },
     { key: 'jurador', label: 'Jurador' },
 
@@ -26,8 +25,8 @@
     { key: 'rampante', label: 'Rampante' },
     { key: 'exaltado', label: 'Exaltado' },
 
-    // BM (CARROÇA)
-    { key: 'bm_carroca', label: 'BM (Carroça)' },
+    // BM
+    { key: 'bm', label: 'BM' },
   ];
   // Map each role key to an image path (place your images under /assets/img)
   const ROLE_IMAGES = {
@@ -35,8 +34,7 @@
     maca_pesada: '/assets/img/maca_pesada.jpg',
     para_tempo: '/assets/img/para_tempo.jpg',
     silence: '/assets/img/silence.jpg',
-    petrea1: '/assets/img/petrea.jpg',
-    petrea2: '/assets/img/petrea.jpg',
+    petrea: '/assets/img/petrea.jpg',
     oculto: '/assets/img/oculto.jpg',
     jurador: '/assets/img/jurador.jpg',
 
@@ -54,7 +52,7 @@
     rampante: '/assets/img/rampante.jpg',
     exaltado: '/assets/img/exaltado.jpg',
 
-    bm_carroca: '/assets/img/bm_carroca.jpg',
+    bm: '/assets/img/bm.jpg',
   };
   const STORAGE_KEY = 'vgk_zvz_ping_one_v1';
   const $role = document.getElementById('role');
