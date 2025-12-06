@@ -30,29 +30,29 @@
   ];
   // Map each role key to an image path (place your images under /assets/img)
   const ROLE_IMAGES = {
-    martelo_batalha: '/assets/img/martelo_batalha.jpg',
-    maca_pesada: '/assets/img/maca_pesada.jpg',
-    para_tempo: '/assets/img/para_tempo.jpg',
-    silence: '/assets/img/silence.jpg',
-    petrea: '/assets/img/petrea.jpg',
-    oculto: '/assets/img/oculto.jpg',
-    jurador: '/assets/img/jurador.jpg',
+    martelo_batalha: '/assets/img/martelo_batalha.png',
+    maca_pesada: '/assets/img/maca_pesada.png',
+    para_tempo: '/assets/img/para_tempo.png',
+    silence: '/assets/img/silence.png',
+    petrea: '/assets/img/petrea.png',
+    oculto: '/assets/img/oculto.png',
+    jurador: '/assets/img/jurador.png',
 
-    prisma: '/assets/img/prisma.jpg',
-    cancao_alvorada: '/assets/img/cancao_alvorada.jpg',
-    putrido: '/assets/img/putrido.jpg',
-    feiticeiro: '/assets/img/feiticeiro.jpg',
-    quebrareinos: '/assets/img/quebrareinos.jpg',
-    cravadas: '/assets/img/cravadas.jpg',
-    archa: '/assets/img/archa.jpg',
-    caca_espirito: '/assets/img/caca_espirito.jpg',
+    prisma: '/assets/img/prisma.png',
+    cancao_alvorada: '/assets/img/cancao_alvorada.png',
+    putrido: '/assets/img/putrido.png',
+    feiticeiro: '/assets/img/feiticeiro.png',
+    quebrareinos: '/assets/img/quebrareinos.png',
+    cravadas: '/assets/img/cravadas.png',
+    archa: '/assets/img/archa.png',
+    caca_espirito: '/assets/img/caca_espirito.png',
 
-    queda_santa1: '/assets/img/queda_santa.jpg',
-    queda_santa2: '/assets/img/queda_santa.jpg',
-    rampante: '/assets/img/rampante.jpg',
-    exaltado: '/assets/img/exaltado.jpg',
+    queda_santa1: '/assets/img/queda_santa.png',
+    queda_santa2: '/assets/img/queda_santa.png',
+    rampante: '/assets/img/rampante.png',
+    exaltado: '/assets/img/exaltado.png',
 
-    bm: '/assets/img/bm.jpg',
+    bm: '/assets/img/bm.png',
   };
   const STORAGE_KEY = 'vgk_zvz_ping_one_v1';
   const $role = document.getElementById('role');
