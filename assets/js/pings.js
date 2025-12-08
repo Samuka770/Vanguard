@@ -7,6 +7,10 @@
   const $refresh = document.getElementById('refresh');
   const $status = document.getElementById('status');
   const $deleteAll = document.getElementById('deleteAll');
+  const $generateList = document.getElementById('generateList');
+  const $generatedText = document.getElementById('generatedText');
+  const $listContent = document.getElementById('listContent');
+  const $copyList = document.getElementById('copyList');
 
   // --- Simple base64-gated auth (client-side only; obfuscation, not true security) ---
   const AUTH_KEY = 'vgk_pings_auth_session_v1';
@@ -141,6 +145,7 @@
       if(!res.ok) throw new Error('HTTP '+res.status);
       const json = await res.json();
       if(json.status !== 'ok') throw new Error('API error');
+      latestPings = json.data || []; // Store for list generation
       render(json.data);
       $status.textContent = `Atualizado em ${new Date().toLocaleTimeString()}`;
     } catch(e){
@@ -208,11 +213,146 @@
     }
   }
 
+  // Store latest data for list generation
+  let latestPings = [];
+
+  function generateFormattedList(){
+    // Build a source array: prefer API data; fallback to DOM cards
+    let source = Array.isArray(latestPings) ? latestPings.slice() : [];
+    if (!source.length) {
+      const cards = Array.from(document.querySelectorAll('#pingsList .ping-card'));
+      source = cards.map(card => ({
+        name: card.querySelector('.ping-name')?.textContent?.trim() || 'Sem nome',
+        role_label: card.querySelector('.ping-role')?.textContent?.trim() || ''
+      }));
+      if (!source.length) {
+        alert('Nenhum ping disponível para gerar a lista.');
+        return;
+      }
+    }
+
+    // Map each ping to appropriate role slot
+    const normalize = s => String(s || '').toLowerCase();
+    
+    // Role mapping based on weapon/build names
+    const roleMap = {
+      // Tanks/Sups
+      'hoj': [],
+      'martelo': [],
+      'maca': [],
+      'paratempo': [],
+      'silence': [],
+      'petrea1': [],
+      'petrea2': [],
+      'oculto': [],
+      'jurador': [],
+      // DPS
+      'prisma': [],
+      'cancao': [],
+      'putrido': [],
+      'feiticeiro': [],
+      'quebrareinos': [],
+      'cravadas': [],
+      'archa': [],
+      'caca': [],
+      // Healers
+      'queda1': [],
+      'queda2': [],
+      'rampante': [],
+      'exaltado': [],
+      // BM
+      'bm': []
+    };
+
+    source.forEach(ping => {
+      const name = ping.name || 'Sem nome';
+      const key = normalize(ping.role_key);
+      const label = normalize(ping.role_label);
+      const text = `${key} ${label} ${name}`.trim();
+
+      // Match to specific role slots
+      if (/\b(hoj|champion)\b/.test(text)) roleMap.hoj.push(name);
+      else if (/\b(martelo de batalha|battle ?hammer|graveguard)\b/.test(text)) roleMap.martelo.push(name);
+      else if (/\b(maça pesada|maca pesada|heavy mace)\b/.test(text)) roleMap.maca.push(name);
+      else if (/\b(para tempo|time ?freeze|arcano)\b/.test(text)) roleMap.paratempo.push(name);
+      else if (/\b(silence|enfeebling)\b/.test(text)) roleMap.silence.push(name);
+      else if (/\b(pétrea|petrea|grovekeeper|campeao da natureza)\b/.test(text)) {
+        if (roleMap.petrea1.length === 0) roleMap.petrea1.push(name);
+        else roleMap.petrea2.push(name);
+      }
+      else if (/\b(oculto|shadowcaller)\b/.test(text)) roleMap.oculto.push(name);
+      else if (/\b(jurador|oathkeeper)\b/.test(text)) roleMap.jurador.push(name);
+      // DPS
+      else if (/\b(prisma|prism|ring|light ?caller)\b/.test(text)) roleMap.prisma.push(name);
+      else if (/\b(canção|cancao|alvorada|dawn ?song|bard)\b/.test(text)) roleMap.cancao.push(name);
+      else if (/\b(putrido|blight|staff)\b/.test(text)) roleMap.putrido.push(name);
+      else if (/\b(feiticeiro|sorcerer)\b/.test(text)) roleMap.feiticeiro.push(name);
+      else if (/\b(quebra ?reinos|realm ?breaker)\b/.test(text)) roleMap.quebrareinos.push(name);
+      else if (/\b(cravadas|galatine|clarent)\b/.test(text)) roleMap.cravadas.push(name);
+      else if (/\b(archa|arcane|staff)\b/.test(text)) roleMap.archa.push(name);
+      else if (/\b(caça|caca|espirito|spirit|hunter)\b/.test(text)) roleMap.caca.push(name);
+      // Healers
+      else if (/\b(queda santa|fall|holy|grande santo)\b/.test(text)) {
+        if (roleMap.queda1.length === 0) roleMap.queda1.push(name);
+        else roleMap.queda2.push(name);
+      }
+      else if (/\b(rampante|rampant|grande natureza)\b/.test(text)) roleMap.rampante.push(name);
+      else if (/\b(exaltado|exalted)\b/.test(text)) roleMap.exaltado.push(name);
+      // BM
+      else if (/\b(bm|battle ?mount|carroça|carroca)\b/.test(text)) roleMap.bm.push(name);
+    });
+
+    // Build formatted text
+    const lines = [
+      '** ----SUPS E TANKS---- **',
+      `**HOJ -      ${roleMap.hoj.join(', ') || ''}**`,
+      `** MARTELO DE BATALHA -  ${roleMap.martelo.join(', ') || ''}**`,
+      `**MAÇA PESADA -  ${roleMap.maca.join(', ') || ''}**`,
+      `** PARA TEMPO - ${roleMap.paratempo.join(', ') || ''}**`,
+      `** SILENCE - ${roleMap.silence.join(', ') || ''}**`,
+      `**PÉTREA -     ${roleMap.petrea1.join(', ') || ''}**`,
+      `**PÉTREA -   ${roleMap.petrea2.join(', ') || ''}**`,
+      `**OCULTO -   ${roleMap.oculto.join(', ') || ''}**`,
+      `**JURADOR -     ${roleMap.jurador.join(', ') || ''}**`,
+      '',
+      '** ----DPS---- **',
+      `**PRISMA -   ${roleMap.prisma.join(', ') || ''}**`,
+      `**CANÇÃO DA ALVORADA -   ${roleMap.cancao.join(', ') || ''}**`,
+      `**PUTRIDO -     ${roleMap.putrido.join(', ') || ''}**`,
+      `**FEITICEIRO -  ${roleMap.feiticeiro.join(', ') || ''}**`,
+      `**QUEBRAREINOS -  ${roleMap.quebrareinos.join(', ') || ''}**`,
+      `**CRAVADAS -  ${roleMap.cravadas.join(', ') || ''}**`,
+      `**ARCHA -  ${roleMap.archa.join(', ') || ''}**`,
+      `**CAÇA ESPIRITO -      ${roleMap.caca.join(', ') || ''}**`,
+      '',
+      '** --HEALERS--**',
+      `**QUEDA SANTA -      ${roleMap.queda1.join(', ') || ''}**`,
+      `**QUEDA SANTA -      ${roleMap.queda2.join(', ') || ''}**`,
+      `**RAMPANTE -   ${roleMap.rampante.join(', ') || ''}**`,
+      `**EXALTADO -  ${roleMap.exaltado.join(', ') || ''}**`,
+      '',
+      `**BM ( CARROÇA ) -     ${roleMap.bm.join(', ') || ''}**`
+    ];
+
+    const formatted = lines.join('\n');
+    $listContent.textContent = formatted;
+    $generatedText.style.display = 'block';
+  }
+
   (async () => {
     const tok = await ensureAuth();
     $refresh?.addEventListener('click', () => load(tok));
     $deleteAll?.addEventListener('click', () => {
       if (confirm('Deletar todos os pings? Esta ação não pode ser desfeita.')) deleteAll(tok);
+    });
+    $generateList?.addEventListener('click', generateFormattedList);
+    $copyList?.addEventListener('click', () => {
+      const text = $listContent.textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        const orig = $copyList.textContent;
+        $copyList.textContent = '✓ Copiado';
+        setTimeout(() => { $copyList.textContent = orig; }, 2000);
+      }).catch(() => alert('Falha ao copiar.'));
     });
     load(tok);
     setInterval(() => load(tok), 30000);
